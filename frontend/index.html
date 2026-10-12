@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Prediction</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+        button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #333;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f0f0;
+            display: none;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Breast Cancer Prediction</h1>
+    <form id="predictionForm">
+        <div class="form-group">
+            <label>Age</label>
+            <input type="number" step="any" id="age" required>
+        </div>
+        <div class="form-group">
+            <label>T Stage</label>
+            <input type="number" step="any" id="t_stage" required>
+        </div>
+        <div class="form-group">
+            <label>N Stage</label>
+            <input type="number" step="any" id="n_stage" required>
+        </div>
+        <div class="form-group">
+            <label>Sixth Stage</label>
+            <input type="number" step="any" id="sixth_stage" required>
+        </div>
+        <div class="form-group">
+            <label>Grade</label>
+            <input type="number" step="any" id="grade" required>
+        </div>
+        <div class="form-group">
+            <label>A Stage</label>
+            <input type="number" step="any" id="a_stage" required>
+        </div>
+        <div class="form-group">
+            <label>Tumor Size</label>
+            <input type="number" step="any" id="tumor_size" required>
+        </div>
+        <div class="form-group">
+            <label>Estrogen Status</label>
+            <input type="number" step="any" id="estrogen_status" required>
+        </div>
+        <div class="form-group">
+            <label>Progesterone Status</label>
+            <input type="number" step="any" id="progesterone_status" required>
+        </div>
+        <div class="form-group">
+            <label>Regional Node Positive</label>
+            <input type="number" step="any" id="regional_node_positive" required>
+        </div>
+        <div class="form-group">
+            <label>Survival Months</label>
+            <input type="number" step="any" id="survival_months" required>
+        </div>
+        <button type="submit">
+            Predict
+        </button>
+    </form>
+    <div id="result"></div>
+</div>
+<script>
+const form = document.getElementById("predictionForm");
+const resultDiv = document.getElementById("result");
+form.addEventListener("submit", async function(event) {
+    event.preventDefault();
+    // Collect data from form
+    const data = {
+
+        age: Number(document.getElementById("age").value),
+
+        t_stage: Number(document.getElementById("t_stage").value),
+
+        n_stage: Number(document.getElementById("n_stage").value),
+
+        sixth_stage: Number(
+            document.getElementById("sixth_stage").value
+        ),
+
+        grade: Number(
+            document.getElementById("grade").value
+        ),
+
+        a_stage: Number(
+            document.getElementById("a_stage").value
+        ),
+
+        tumor_size: Number(
+            document.getElementById("tumor_size").value
+        ),
+
+        estrogen_status: Number(
+            document.getElementById("estrogen_status").value
+        ),
+
+        progesterone_status: Number(
+            document.getElementById("progesterone_status").value
+        ),
+
+        regional_node_positive: Number(
+            document.getElementById("regional_node_positive").value
+        ),
+
+        survival_months: Number(
+            document.getElementById("survival_months").value
+        )
+    };
+
+
+    try {
+
+        resultDiv.style.display = "block";
+
+        resultDiv.innerHTML = "Loading...";
+
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/predict",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+
+        const result = await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.detail || "Prediction failed"
+            );
+
+        }
+
+
+        // Show API result
+
+        resultDiv.className = "success";
+
+        resultDiv.innerHTML = `
+
+            <h3>Prediction Result</h3>
+
+            <p>
+                <strong>Prediction:</strong>
+                ${result.prediction}
+            </p>
+
+            <p>
+                <strong>Status:</strong>
+                ${result.status}
+            </p>
+
+            <p>
+                <strong>Probability:</strong>
+                ${(result.probability * 100).toFixed(2)}%
+            </p>
+
+        `;
+
+    }
+
+
+    catch (error) {
+
+        resultDiv.className = "error";
+
+        resultDiv.innerHTML = `
+
+            <strong>Error:</strong>
+            ${error.message}
+
+        `;
+
+    }
+
+});
+
+</script>
+
+</body>
+
+</html>
+```
+    
+
