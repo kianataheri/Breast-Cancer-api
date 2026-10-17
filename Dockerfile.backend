@@ -1,17 +1,41 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS builder
 
-WORKDIR /app
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+WORKDIR /build
+
+RUN python -m venv /opt/venv
 
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
-COPY model ./model
+
+#-----------------------------
+FROM python:3.13-slim AS runtime
+
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+COPY --from=builder /opt/venv /opt/venv
+
+RUN groupadd --system appgroup \
+    && useradd --system --gid appgroup appuser
+
+COPY --chown=appuser:appgroup app/ ./app/
+COPY --chown=appuser:appgroup model/ ./model/
+
+USER appuser
 
 EXPOSE 8000
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
